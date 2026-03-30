@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>歷史版百萬富翁 - 60題雙語龍虎榜版</title>
+    <style>
+        :root { --atv-blue: #000044; --atv-gold: #ffd700; --atv-orange: #ff9900; }
+        body { background-color: #000; color: white; font-family: "Microsoft JhengHei", "Arial", sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-size: 16px; overflow: hidden; }
+        
+        #game-wrapper { width: 95%; max-width: 1000px; max-height: 95vh; display: flex; flex-direction: column; background: var(--atv-blue); border: 4px solid var(--atv-gold); padding: 20px; box-sizing: border-box; border-radius: 25px; position: relative; box-shadow: 0 0 40px rgba(255, 215, 0, 0.4); overflow-y: auto; }
+        
+        /* 頂部音樂控制 */
+        #music-ctrl { position: absolute; top: 15px; right: 15px; z-index: 100; background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 30px; border: 2px solid var(--atv-gold); cursor: pointer; font-size: 0.85em; }
+
+        .screen { display: none; width: 100%; height: 100%; }
+        .active-screen { display: flex; flex-direction: column; justify-content: center; }
+        .centered-content { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; height: 100%; }
+        
+        /* 標題與輸入框改為適中尺寸 */
+        h1 { color: var(--atv-gold); font-size: 2.5em; margin: 0 0 10px 0; text-shadow: 2px 2px 5px #000; }
+        input[type="text"] { width: 90%; max-width: 400px; padding: 12px; margin: 15px 0; border-radius: 12px; border: 3px solid var(--atv-gold); background: #001; color: white; font-size: 1.2em; text-align: center; font-weight: bold; }
+        .atv-btn { background: linear-gradient(to bottom, var(--atv-orange), #cc6600); color: white; padding: 12px 35px; font-size: 1.2em; border: 2px solid white; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.3s; }
+        .atv-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--atv-orange); }
+
+        /* 龍虎榜樣式 */
+        .leaderboard-box { background: rgba(0,0,0,0.5); border: 2px solid var(--atv-gold); border-radius: 15px; padding: 15px; width: 100%; max-width: 600px; margin-bottom: 15px; }
+        .lb-table { width: 100%; border-collapse: collapse; font-size: 1em; }
+        .lb-table th { color: var(--atv-gold); padding: 8px; border-bottom: 2px solid #555; }
+        .lb-table td { padding: 8px; border-bottom: 1px solid #333; text-align: center; }
+
+        /* 遊戲介面布局 */
+        #main-game-container { display: flex; gap: 20px; flex: 1; }
+        .game-left { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; }
+        
+        /* 顯示器：姓名與計時器 */
+        .status-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: rgba(0,0,0,0.4); padding: 10px 20px; border-radius: 12px; border: 1px solid #555; }
+        #timer-display { font-size: 1.2em; color: var(--atv-orange); font-weight: bold; }
+
+        /* 題目框 */
+        .question-box { background: rgba(0,0,0,0.6); padding: 20px; border: 2px solid #aaa; border-radius: 15px; text-align: center; font-size: 1.4em; line-height: 1.3; min-height: 100px; display: flex; flex-direction: column; justify-content: center; }
+        .lang-en { display: block; font-size: 0.75em; color: #ccc; margin-top: 10px; font-style: italic; }
+
+        /* 選項按鈕 */
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+        .opt-btn { background: linear-gradient(to bottom, #0000bb, #000044); border: 2px solid var(--atv-gold); color: white; padding: 15px; border-radius: 30px; cursor: pointer; text-align: left; font-size: 1.1em; min-height: 70px; display: flex; flex-direction: column; justify-content: center; transition: background 0.2s, color 0.2s; }
+        .opt-btn .en-opt { font-size: 0.75em; color: #bbb; margin-top: 5px; }
+
+        /* 獎金梯 */
+        .money-ladder { width: 200px; background: rgba(0,0,0,0.7); border: 2px solid var(--atv-gold); padding: 10px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-around; }
+        .ladder-item { padding: 5px 10px; color: #777; text-align: right; border-bottom: 1px solid #333; font-size: 0.85em; }
+        .ladder-item.active { background: var(--atv-orange); color: white; font-weight: bold; transform: scale(1.05); border-radius: 5px; border: none; }
+        .ladder-item.milestone { color: #00ff00; }
+
+        /* 錦囊 */
+        .lifeline-row { display: flex; gap: 10px; justify-content: center; }
+        .lifeline { padding: 8px 15px; border-radius: 20px; border: 2px solid white; background: #333; color: white; cursor: pointer; font-size: 0.9em; font-weight: bold; }
+        .lifeline.used { opacity: 0.2; cursor: not-allowed; text-decoration: line-through; }
+
+        #result-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 10000; text-align: center; }
+        #yt-player { position: absolute; top: -1000px; }
+        
+        /* 手機版適配：確保完全不需上下滑動 */
+        @media (max-width: 900px) { 
+            body { overflow: auto; }
+            #game-wrapper { padding: 10px; width: 98%; max-height: none; height: auto; border-radius: 15px; border-width: 2px; }
+            #main-game-container { flex-direction: column; gap: 10px; margin-top: 5px; } 
+            .money-ladder { display: none; } 
+            .options-grid { grid-template-columns: 1fr; gap: 8px; margin-top: 10px; } 
+            h1 { font-size: 1.8em; }
+            .question-box { font-size: 1.1em; padding: 15px 10px; min-height: 80px; }
+            .opt-btn { min-height: 50px; padding: 10px 15px; font-size: 1em; border-radius: 20px; }
+            .status-bar { padding: 8px 10px; flex-direction: column; gap: 10px; margin-bottom: 5px; }
+            .leaderboard-box { margin-bottom: 10px; }
+            #music-ctrl { top: 5px; right: 5px; padding: 5px 10px; font-size: 0.7em; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="yt-player"></div>
+<div id="music-ctrl" onclick="toggleMusic()">🔊 MUSIC: ON</div>
+
+<div id="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center;">
+    <div style="width:85%; max-width:500px; background:#fff; color:#000; padding:30px; border-radius:20px; text-align:center; border:5px solid var(--atv-orange);">
+        <h2 id="lifeline-title" style="font-size:1.8em; margin-top:0;"></h2>
+        <div id="lifeline-content" style="font-size:1.3em; margin:20px 0;"></div>
+        <button class="atv-btn" style="font-size:1.2em; padding:10px 20px;" onclick="closeLifeline()">CLOSE / 關閉</button>
+    </div>
+</div>
+
+<div id="game-wrapper">
+    <div id="setup-screen" class="screen active-screen">
+        <div class="centered-content">
+            <h1>百萬富翁</h1>
+            <p style="font-size:1.1em; margin-top:0;">1900-2000 History Challenge</p>
+            
+            <div class="leaderboard-box">
+                <h3 style="color:var(--atv-gold); font-size:1.2em; margin-top:0; margin-bottom:10px;">🏆 LEADERBOARD / 龍虎榜</h3>
+                <table class="lb-table" id="lb-body">
+                    <thead><tr><th>Rank</th><th>Name</th><th>Prize</th><th>Time</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <input type="text" id="player-name-input" placeholder="Enter Name / 輸入姓名" maxlength="12">
+            <button class="atv-btn" onclick="startGame()">START / 開始</button>
+        </div>
+    </div>
+
+    <div id="main-game" class="screen">
+        <div class="status-bar">
+            <div style="display:flex; gap:15px; align-items:center;">
+                <div style="color:var(--atv-gold); font-size:1.1em; font-weight:bold;">👤 <span id="display-name"></span></div>
+                <div id="timer-display">⏱️ 00:00</div>
+            </div>
+            <div class="lifeline-row">
+                <button class="lifeline" id="life5050" onclick="use5050()">50:50</button>
+                <button class="lifeline" id="lifePhone" onclick="usePhone()">☎️</button>
+                <button class="lifeline" id="lifeAudience" onclick="useAudience()">👥</button>
+            </div>
+        </div>
+
+        <div id="main-game-container">
+            <div class="game-left">
+                <div class="question-box">
+                    <div id="q-zh"></div>
+                    <div id="q-en" class="lang-en"></div>
+                </div>
+                <div class="options-grid">
+                    <button class="opt-btn" id="btn0" onclick="handleAnswer(0)"></button>
+                    <button class="opt-btn" id="btn1" onclick="handleAnswer(1)"></button>
+                    <button class="opt-btn" id="btn2" onclick="handleAnswer(2)"></button>
+                    <button class="opt-btn" id="btn3" onclick="handleAnswer(3)"></button>
+                </div>
+            </div>
+            <div class="money-ladder" id="ladder-box"></div>
+        </div>
+    </div>
+
+    <div id="result-overlay">
+        <h1 id="result-title" style="font-size:4em;"></h1>
+        <div id="result-msg" style="font-size: 2em; margin: 30px 0;"></div>
+        <button class="atv-btn" onclick="location.reload()">REPLAY / 重新挑戰</button>
+    </div>
+</div>
+
+<script>
+    // --- 完整 60 題雙語題庫 ---
+    const ALL_QUESTIONS = [
+        {qz:"1912年，辛亥革命後誰就任中華民國臨時大總統？", qe:"Who became the Provisional President of the ROC in 1912?", oz:["孫中山","袁世凱","宋教仁","黎元洪"], oe:["Sun Yat-sen","Yuan Shikai","Song Jiaoren","Li Yuanhong"], c:"孫中山"},
+        {qz:"1914年引發一戰的「薩拉熱窩事件」刺殺了哪國皇儲？", qe:"The 1914 Sarajevo Incident involved the assassination of the Archduke of which empire?", oz:["奧匈帝國","德國","英國","俄國"], oe:["Austria-Hungary","Germany","Britain","Russia"], c:"奧匈帝國"},
+        {qz:"1929年從美國爆發並蔓延全球的經濟危機稱為什麼？", qe:"What was the global economic crisis that started in the US in 1929?", oz:["大蕭條","金融海嘯","泡沬經濟","石油危機"], oe:["The Great Depression","Financial Tsunami","Economic Bubble","Oil Crisis"], c:"大蕭條"},
+        {qz:"1944年盟軍在二戰中發動了最大規模登陸作戰，地點是？", qe:"Where was the largest Allied naval invasion of WWII in 1944?", oz:["諾曼第","敦克爾克","西西里","中途島"], oe:["Normandy","Dunkirk","Sicily","Midway"], c:"諾曼第"},
+        {qz:"1945年8月，美國在日本哪兩個城市投下了原子彈？", qe:"In August 1945, the US dropped atomic bombs on which two Japanese cities?", oz:["廣島、長崎","東京、大阪","長崎、名古屋","廣島、京都"], oe:["Hiroshima & Nagasaki","Tokyo & Osaka","Nagasaki & Nagoya","Hiroshima & Kyoto"], c:"廣島、長崎"},
+        {qz:"1969年，美國哪一艘太空船成功載人降落在月球表面？", qe:"In 1969, which US spacecraft successfully landed humans on the moon?", oz:["阿波羅11號","挑戰者號","航行者號","發現號"], oe:["Apollo 11","Challenger","Voyager","Discovery"], c:"阿波羅11號"},
+        {qz:"1989年柏林圍牆倒塌，標誌著哪個國家的統一？", qe:"The fall of the Berlin Wall in 1989 marked the reunification of which country?", oz:["德國","越南","也門","韓國"], oe:["Germany","Vietnam","Yemen","Korea"], c:"德國"},
+        {qz:"1997年香港回歸，第一任行政長官是誰？", qe:"Who was the first Chief Executive of Hong Kong after the 1997 handover?", oz:["董建華","曾蔭權","梁振英","林鄭月娥"], oe:["Tung Chee-hwa","Donald Tsang","CY Leung","Carrie Lam"], c:"董建華"},
+        {qz:"1903年完成人類首次動力飛行的是萊特兄弟，他們是哪國人？", qe:"The Wright brothers made the first powered flight in 1903. Which country were they from?", oz:["美國","英國","法國","德國"], oe:["USA","UK","France","Germany"], c:"美國"},
+        {qz:"1919年一戰結束後簽署的條約名稱是？", qe:"What was the name of the treaty signed after WWI ended in 1919?", oz:["凡爾賽條約","南京條約","北京條約","馬關條約"], oe:["Treaty of Versailles","Treaty of Nanjing","Treaty of Beijing","Treaty of Shimonoseki"], c:"凡爾賽條約"},
+        {qz:"1931年九一八事變是由哪國軍隊發動？", qe:"Which country's army launched the Mukden Incident in 1931?", oz:["日本","俄國","德國","英國"], oe:["Japan","Russia","Germany","UK"], c:"日本"},
+        {qz:"1945年建立的聯合國，總部設在哪個城市？", qe:"Where is the headquarters of the United Nations, established in 1945?", oz:["紐約","倫敦","巴黎","日內瓦"], oe:["New York","London","Paris","Geneva"], c:"紐約"},
+        {qz:"1962年哪場危機將人類帶到了核戰爭邊緣？", qe:"Which 1962 crisis brought the world to the brink of nuclear war?", oz:["古巴導彈危機","柏林牆危機","蘇伊士危機","越南戰爭"], oe:["Cuban Missile Crisis","Berlin Wall Crisis","Suez Crisis","Vietnam War"], c:"古巴導彈危機"},
+        {qz:"1905年愛因斯坦發表了著名的什麼理論？", qe:"What famous theory did Albert Einstein publish in 1905?", oz:["相對論","進化論","地動論","萬有引力"], oe:["Theory of Relativity","Evolution","Heliocentrism","Gravity"], c:"相對論"},
+        {qz:"1986年切爾諾貝爾核事故發生在當時的哪個國家？", qe:"The Chernobyl disaster in 1986 occurred in which country at the time?", oz:["蘇聯(烏克蘭)","波蘭","德國","法國"], oe:["USSR (Ukraine)","Poland","Germany","France"], c:"蘇聯(烏克蘭)"},
+        {qz:"1978年中國開始實施「改革開放」，由誰主導？", qe:"Who led China's 'Reform and Opening-up' policy starting in 1978?", oz:["鄧小平","毛澤東","江澤民","胡錦濤"], oe:["Deng Xiaoping","Mao Zedong","Jiang Zemin","Hu Jintao"], c:"鄧小平"},
+        {qz:"1950-1953年爆發了哪場東亞戰爭？", qe:"Which East Asian war broke out between 1950 and 1953?", oz:["韓戰","越戰","鴉片戰爭","冷戰"], oe:["Korean War","Vietnam War","Opium War","Cold War"], c:"韓戰"},
+        {qz:"1901年第一屆諾貝爾獎頒發，他是發明了什麼？", qe:"The first Nobel Prizes were awarded in 1901. What did Alfred Nobel invent?", oz:["炸藥","燈泡","電話","飛機"], oe:["Dynamite","Light bulb","Telephone","Airplane"], c:"炸藥"},
+        {qz:"1940年發表著名的「血汗工廠」演說的英國首相是？", qe:"Which UK PM gave the 'Blood, Toil, Tears and Sweat' speech in 1940?", oz:["邱吉爾","張伯倫","艾德禮","柴契爾"], oe:["Winston Churchill","Neville Chamberlain","Clement Attlee","Margaret Thatcher"], c:"邱吉爾"},
+        {qz:"1999年12月20日，哪個地區回歸中國？", qe:"Which region returned to China on December 20, 1999?", oz:["澳門","香港","台灣","珠海"], oe:["Macau","Hong Kong","Taiwan","Zhuhai"], c:"澳門"},
+        {qz:"1917年俄國爆發了哪場革命，建立了蘇維埃政權？", qe:"Which 1917 revolution led to the establishment of Soviet power in Russia?", oz:["十月革命","二月革命","光榮革命","法國大革命"], oe:["October Revolution","February Revolution","Glorious Revolution","French Revolution"], c:"十月革命"},
+        {qz:"1920年成立，旨在維護世界和平但最終失敗的組織是？", qe:"Which organization was formed in 1920 to maintain peace but failed?", oz:["國際聯盟","聯合國","北約","華沙公約"], oe:["League of Nations","United Nations","NATO","Warsaw Pact"], c:"國際聯盟"},
+        {qz:"1928年誰發現了青黴素(盤尼西林)？", qe:"Who discovered Penicillin in 1928?", oz:["弗萊明","巴斯德","愛迪生","居禮夫人"], oe:["Alexander Fleming","Louis Pasteur","Thomas Edison","Marie Curie"], c:"弗萊明"},
+        {qz:"1936年中國發生的哪次事件促成了抗日民族統一戰線？", qe:"Which 1936 incident in China led to the United Front against Japan?", oz:["西安事變","盧溝橋事變","九一八事變","五四運動"], oe:["Xi'an Incident","Marco Polo Bridge Incident","Mukden Incident","May Fourth Movement"], c:"西安事變"},
+        {qz:"1939年德國入侵哪國導致二戰爆發？", qe:"Germany's invasion of which country led to the start of WWII in 1939?", oz:["波蘭","法國","蘇聯","捷克"], oe:["Poland","France","USSR","Czechoslovakia"], c:"波蘭"},
+        {qz:"1941年日本偷襲哪裡導致美國直接參戰？", qe:"Where did Japan attack in 1941, leading the US to enter WWII?", oz:["珍珠港","中途島","關島","菲律賓"], oe:["Pearl Harbor","Midway","Guam","Philippines"], c:"珍珠港"},
+        {qz:"1947年美國提出什麼計劃以復興戰後歐洲？", qe:"Which US plan was launched in 1947 to rebuild post-war Europe?", oz:["馬歇爾計劃","杜魯門主義","莫洛托夫計劃","新政"], oe:["Marshall Plan","Truman Doctrine","Molotov Plan","New Deal"], c:"馬歇爾計劃"},
+        {qz:"1948年哪個國家在巴勒斯坦地區宣佈成立？", qe:"Which country declared independence in Palestine in 1948?", oz:["以色列","約旦","黎巴嫩","埃及"], oe:["Israel","Jordan","Lebanon","Egypt"], c:"以色列"},
+        {qz:"1949年成立的西方軍事同盟簡稱是？", qe:"What is the acronym for the Western military alliance formed in 1949?", oz:["NATO","UN","EU","APEC"], oe:["NATO","UN","EU","APEC"], c:"NATO"},
+        {qz:"1949年10月1日，誰在天安門宣佈中華人民共和國成立？", qe:"Who declared the founding of the PRC on Oct 1, 1949?", oz:["毛澤東","周恩來","朱德","劉少奇"], oe:["Mao Zedong","Zhou Enlai","Zhu De","Liu Shaoqi"], c:"毛澤東"},
+        {qz:"1953年誰和艾德蒙·希拉里首次登上珠穆朗瑪峰？", qe:"Who climbed Everest first in 1953 with Edmund Hillary?", oz:["騰辛·諾蓋","卡特","斯科特","阿姆斯特朗"], oe:["Tenzing Norgay","Carter","Scott","Armstrong"], c:"騰辛·諾蓋"},
+        {qz:"1955年美國黑人民權運動由誰拒絕讓座開始？", qe:"Whose refusal to give up a bus seat sparked the US Civil Rights Movement in 1955?", oz:["羅莎·帕克斯","馬丁·路德·金","奧巴馬","馬爾科姆"], oe:["Rosa Parks","Martin Luther King","Obama","Malcolm X"], c:"羅莎·帕克斯"},
+        {qz:"1957年蘇聯發射了第一顆人造衛星，名為？", qe:"What was the first artificial satellite launched by the USSR in 1957?", oz:["史普尼克1號","東方號","和平號","阿波羅"], oe:["Sputnik 1","Vostok","Mir","Apollo"], c:"史普尼克1號"},
+        {qz:"1963年馬丁·路德·金發表了什麼著名演說？", qe:"What famous speech did Martin Luther King Jr. deliver in 1963?", oz:["我有一個夢想","就職演說","告別演說","葛底斯堡演說"], oe:["I Have a Dream","Inaugural Address","Farewell Address","Gettysburg Address"], c:"我有一個夢想"},
+        {qz:"1966年中國開始了哪場持續十年的動亂？", qe:"What decade-long upheaval began in China in 1966?", oz:["文化大革命","大躍進","反右運動","四清運動"], oe:["Cultural Revolution","Great Leap Forward","Anti-Rightist Movement","Four Cleans"], c:"文化大革命"},
+        {qz:"1967年成立的歐盟前身組織是？", qe:"What was the predecessor of the EU formed in 1967?", oz:["歐洲共同體","北約","華沙公約","東盟"], oe:["European Community (EC)","NATO","Warsaw Pact","ASEAN"], c:"歐洲共同體"},
+        {qz:"1972年美國哪位總統訪問中國，開啟關係正常化？", qe:"Which US President visited China in 1972?", oz:["尼克遜","甘迺迪","列根","卡特"], oe:["Richard Nixon","JFK","Ronald Reagan","Jimmy Carter"], c:"尼克遜"},
+        {qz:"1975年哪場戰爭以北越勝利及國家統一告終？", qe:"Which war ended in 1975 with North Vietnam's victory?", oz:["越南戰爭","韓戰","海灣戰爭","馬島戰爭"], oe:["Vietnam War","Korean War","Gulf War","Falklands War"], c:"越南戰爭"},
+        {qz:"1979年索尼推出了哪種改變音樂收聽習慣的產品？", qe:"What Sony product launched in 1979 changed music listening?", oz:["Walkman隨身聽","CD機","收音機","黑膠機"], oe:["Walkman","CD Player","Radio","Turntable"], c:"Walkman隨身聽"},
+        {qz:"1981年第一架穿梭機由美國發射，名為？", qe:"What was the name of the first US Space Shuttle launched in 1981?", oz:["哥倫比亞號","挑戰者號","發現號","亞特蘭提斯"], oe:["Columbia","Challenger","Discovery","Atlantis"], c:"哥倫比亞號"},
+        {qz:"1990年哪位南非領袖在被囚27年後獲釋？", qe:"Which South African leader was released in 1990 after 27 years?", oz:["曼德拉","圖圖","戴克拉克","姆貝基"], oe:["Nelson Mandela","Desmond Tutu","De Klerk","Mbeki"], c:"曼德拉"},
+        {qz:"1991年海灣戰爭中，多國部隊主要打擊哪個國家？", qe:"Which country was the target of UN forces in the 1991 Gulf War?", oz:["伊拉克","伊朗","科威特","敘利亞"], oe:["Iraq","Iran","Kuwait","Syria"], c:"伊拉克"},
+        {qz:"1991年聖誕節，哪個超級大國正式宣告解體？", qe:"Which superpower formally collapsed on Christmas 1991?", oz:["蘇聯","南斯拉夫","奧匈帝國","大英帝國"], oe:["Soviet Union (USSR)","Yugoslavia","Austria-Hungary","British Empire"], c:"蘇聯"},
+        {qz:"1994年哪位南非領袖當選為該國首位黑人總統？", qe:"Who became South Africa's first black president in 1994?", oz:["曼德拉","奧巴馬","安南","馬丁路德金"], oe:["Nelson Mandela","Barack Obama","Kofi Annan","MLK"], c:"曼德拉"},
+        {qz:"1997年哪台超級電腦擊敗了世界棋王卡斯帕羅夫？", qe:"Which supercomputer defeated Garry Kasparov in 1997?", oz:["深藍","阿爾法狗","屈臣","銀河"], oe:["Deep Blue","AlphaGo","Watson","Tianhe"], c:"深藍"},
+        {qz:"1999年歐洲多國正式啟用哪種統一貨幣？", qe:"Which unified currency was adopted by many European nations in 1999?", oz:["歐元","英鎊","法郎","馬克"], oe:["Euro","Pound","Franc","Mark"], c:"歐元"},
+        {qz:"1908年福特汽車推出了哪款讓汽車普及的型號？", qe:"Which Ford model launched in 1908 made cars affordable?", oz:["T型車","A型車","野馬","F系列"], oe:["Model T","Model A","Mustang","F-Series"], c:"T型車"},
+        {qz:"1912年哪艘號稱「永不沉沒」的郵輪在首航中沉沒？", qe:"Which 'unsinkable' ship sank on its maiden voyage in 1912?", oz:["鐵達尼號","奧林匹克號","盧西塔尼亞號","不列顛號"], oe:["Titanic","Olympic","Lusitania","Britannic"], c:"鐵達尼號"},
+        {qz:"1914年連接大西洋與太平洋的哪條運河正式通航？", qe:"Which canal connecting the Atlantic and Pacific opened in 1914?", oz:["巴拿馬運河","蘇伊士運河","基爾運河","京杭大運河"], oe:["Panama Canal","Suez Canal","Kiel Canal","Grand Canal"], c:"巴拿馬運河"},
+        {qz:"1930年甘地發起了哪場著名的非暴力抗議行動？", qe:"Which non-violent protest did Gandhi lead in 1930?", oz:["食鹽長征","向羅馬進軍","華盛頓遊行","罷工"], oe:["Salt March","March on Rome","March on Washington","General Strike"], c:"食鹽長征"},
+        {qz:"1937年著名的齊柏林飛船在哪次事故中焚毀？", qe:"Which Zeppelin airship burned in a famous 1937 accident?", oz:["興登堡號","齊柏林號","格拉夫號","洛杉磯號"], oe:["Hindenburg","Zeppelin","Graf","Los Angeles"], c:"興登堡號"},
+        {qz:"1942年二戰太平洋戰場哪場海戰成為轉折點？", qe:"Which 1942 naval battle was the turning point in the Pacific?", oz:["中途島海戰","珊瑚海海戰","萊特灣海戰","珍珠港"], oe:["Battle of Midway","Coral Sea","Leyte Gulf","Pearl Harbor"], c:"中途島海戰"},
+        {qz:"1953年發現DNA雙螺旋結構的科學家是華生和？", qe:"Who discovered DNA structure with James Watson in 1953?", oz:["克里克","富蘭克林","牛頓","達爾文"], oe:["Francis Crick","Franklin","Newton","Darwin"], c:"克里克"},
+        {qz:"1963年哪位美國總統在達拉斯遇刺身亡？", qe:"Which US President was assassinated in Dallas in 1963?", oz:["甘迺迪","林肯","羅斯福","尼克遜"], oe:["John F. Kennedy","Lincoln","Roosevelt","Nixon"], c:"甘迺迪"},
+        {qz:"1969年美國舉行了哪場著名的搖滾音樂節？", qe:"Which famous rock festival was held in the US in 1969?", oz:["胡士托音樂節","格拉斯頓伯里","科切拉","雷丁"], oe:["Woodstock","Glastonbury","Coachella","Reading"], c:"胡士托音樂節"},
+        {qz:"1971年英特爾推出了全球第一款什麼？", qe:"What did Intel launch for the first time in 1971?", oz:["微處理器","鼠標","鍵盤","顯示器"], oe:["Microprocessor","Mouse","Keyboard","Monitor"], c:"微處理器"},
+        {qz:"1972年哪次醜聞最終導致美國總統尼克遜辭職？", qe:"Which scandal led to President Nixon's resignation in 1972?", oz:["水門事件","伊朗門","克林頓醜聞","黑金"], oe:["Watergate","Iran-Contra","Lewinsky","Black Money"], c:"水門事件"},
+        {qz:"1979年英國首位女首相上任，她是？", qe:"Who became the first female UK Prime Minister in 1979?", oz:["柴契爾夫人","梅伊","特拉斯","伊利沙伯"], oe:["Margaret Thatcher","Theresa May","Liz Truss","Elizabeth"], c:"柴契爾夫人"},
+        {qz:"1989年誰在歐洲核子研究組織發明了萬維網(WWW)？", qe:"Who invented the World Wide Web (WWW) in 1989?", oz:["柏內茲-李","蓋茨","喬布斯","扎克伯格"], oe:["Tim Berners-Lee","Bill Gates","Steve Jobs","Zuckerberg"], c:"柏內茲-李"},
+        {qz:"2000年人類進入了千禧年，那是哪個世紀的最後一年？", qe:"2000 was the final year of which century?", oz:["20世紀","21世紀","19世紀","18世紀"], oe:["20th Century","21st Century","19th Century","18th Century"], c:"20世紀"}
+    ];
+
+    const MONEY_VALUES = [1000000, 500000, 250000, 150000, 80000, 60000, 40000, 30000, 20000, 10000, 8000, 4000, 3000, 2000, 1000];
+    const MONEY_TEXTS = ["1,000,000", "500,000", "250,000", "150,000", "80,000", "60,000", "40,000", "30,000", "20,000", "10,000", "8,000", "4,000", "3,000", "2,000", "1,000"];
+    
+    let gameQuestions = [];
+    let playerName = "";
+    let currentLv = 0;
+    let lifelines = { s50: false, phone: false, aud: false };
+    let startTime, timerInterval;
+
+    // YouTube API
+    let player;
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('yt-player', {
+            height: '0', width: '0', videoId: 'MForOVuA6hs',
+            playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'MForOVuA6hs' },
+            events: { 'onReady': () => console.log("Music Ready") }
+        });
+    }
+
+    function toggleMusic() {
+        if (!player) return;
+        const state = player.getPlayerState();
+        if (state === 1) { player.pauseVideo(); document.getElementById('music-ctrl').innerText = "🔇 MUSIC: OFF"; }
+        else { player.playVideo(); document.getElementById('music-ctrl').innerText = "🔊 MUSIC: ON"; }
+    }
+
+    function startGame() {
+        playerName = document.getElementById('player-name-input').value.trim();
+        if (!playerName) { alert("Please enter your name! 請輸入姓名！"); return; }
+        
+        let elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen().catch(err => console.log("全螢幕被阻擋:", err));
+        } else if (elem.webkitRequestFullscreen) { /* Safari */
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE11 */
+            elem.msRequestFullscreen();
+        }
+
+        if (player && typeof player.playVideo === 'function') player.playVideo();
+        
+        // 從60題選15題
+        let pool = [...ALL_QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 15);
+        gameQuestions = pool.map(item => {
+            let combined = item.oz.map((z, i) => ({ z, e: item.oe[i] }));
+            combined.sort(() => Math.random() - 0.5);
+            return {
+                qz: item.qz, qe: item.qe,
+                oz: combined.map(x => x.z), oe: combined.map(x => x.e),
+                c: combined.findIndex(x => x.z === item.c),
+                correctStr: item.c
+            };
+        });
+
+        currentLv = 0;
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimer, 1000);
+        document.getElementById('display-name').innerText = playerName;
+        showScreen('main-game');
+        initLadder();
+        loadQuestion();
+    }
+
+    function updateTimer() {
+        let diff = Math.floor((Date.now() - startTime) / 1000);
+        let m = Math.floor(diff / 60).toString().padStart(2, '0');
+        let s = (diff % 60).toString().padStart(2, '0');
+        document.getElementById('timer-display').innerText = `⏱️ ${m}:${s}`;
+    }
+
+    function initLadder() {
+        const box = document.getElementById('ladder-box');
+        box.innerHTML = '';
+        MONEY_TEXTS.forEach((val, i) => {
+            const lv = 15 - i;
+            const div = document.createElement('div');
+            div.className = 'ladder-item';
+            if (lv === 5 || lv === 10) div.classList.add('milestone');
+            div.id = `lv-${lv}`;
+            div.innerText = `${lv} ◆ $${val}`;
+            box.appendChild(div);
+        });
+    }
+
+    function loadQuestion() {
+        const qData = gameQuestions[currentLv];
+        document.getElementById('q-zh').innerText = `【Q${currentLv + 1}】 ${qData.qz}`;
+        document.getElementById('q-en').innerText = qData.qe;
+
+        for (let i = 0; i < 4; i++) {
+            const btn = document.getElementById(`btn${i}`);
+            btn.innerHTML = `<div><b>${String.fromCharCode(65+i)}:</b> ${qData.oz[i]}</div><div class="en-opt">${qData.oe[i]}</div>`;
+            btn.style.opacity = '1'; 
+            btn.style.pointerEvents = 'auto';
+            btn.style.background = 'linear-gradient(to bottom, #0000bb, #000044)';
+            btn.style.color = 'white'; 
+        }
+        document.querySelectorAll('.ladder-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(`lv-${currentLv + 1}`).classList.add('active');
+    }
+
+    function handleAnswer(idx) {
+        const btns = document.querySelectorAll('.opt-btn');
+        btns.forEach(b => b.style.pointerEvents = 'none');
+
+        if (idx === gameQuestions[currentLv].c) {
+            document.getElementById(`btn${idx}`).style.background = '#00ff00';
+            document.getElementById(`btn${idx}`).style.color = '#000';
+            if (currentLv === 14) {
+                setTimeout(() => endGame("win"), 1200);
+            } else {
+                currentLv++;
+                setTimeout(loadQuestion, 1200);
+            }
+        } else {
+            document.getElementById(`btn${idx}`).style.background = '#ff0000';
+            document.getElementById(`btn${gameQuestions[currentLv].c}`).style.background = '#00ff00';
+            document.getElementById(`btn${gameQuestions[currentLv].c}`).style.color = '#000';
+            setTimeout(() => endGame("lose"), 1500);
+        }
+    }
+
+    function use5050() {
+        if (lifelines.s50) return;
+        const cIdx = gameQuestions[currentLv].c;
+        let wrong = [0,1,2,3].filter(i => i !== cIdx).sort(() => Math.random() - 0.5);
+        document.getElementById(`btn${wrong[0]}`).style.opacity = '0.1';
+        document.getElementById(`btn${wrong[0]}`).style.pointerEvents = 'none';
+        document.getElementById(`btn${wrong[1]}`).style.opacity = '0.1';
+        document.getElementById(`btn${wrong[1]}`).style.pointerEvents = 'none';
+        lifelines.s50 = true;
+        document.getElementById('life5050').classList.add('used');
+    }
+
+    function usePhone() {
+        if (lifelines.phone) return;
+        const cLetter = String.fromCharCode(65 + gameQuestions[currentLv].c);
+        openLifeline("☎️ CALL / 智囊團", `I think it's <b style='color:red;'>${cLetter}</b>!<br>我認為答案是 ${cLetter}！`);
+        lifelines.phone = true;
+        document.getElementById('lifePhone').classList.add('used');
+    }
+
+    function useAudience() {
+        if (lifelines.aud) return;
+        const c = gameQuestions[currentLv].c;
+        let p = [12, 12, 12, 12]; p[c] = 64;
+        openLifeline("👥 AUDIENCE / 問觀眾", `A: ${p[0]}% | B: ${p[1]}% | C: ${p[2]}% | D: ${p[3]}%<br>Most suggest <b>${String.fromCharCode(65+c)}</b>.`);
+        lifelines.aud = true;
+        document.getElementById('lifeAudience').classList.add('used');
+    }
+
+    function openLifeline(title, content) {
+        document.getElementById('lifeline-title').innerText = title;
+        document.getElementById('lifeline-content').innerHTML = content;
+        document.getElementById('modal-overlay').style.display = 'flex';
+    }
+    function closeLifeline() { document.getElementById('modal-overlay').style.display = 'none'; }
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+        document.getElementById(id).classList.add('active-screen');
+    }
+
+    function endGame(type) {
+        clearInterval(timerInterval);
+        const timeUsed = Math.floor((Date.now() - startTime) / 1000);
+        let prize = 0;
+        if (type === "win") prize = 1000000;
+        else {
+            if (currentLv >= 10) prize = 60000;
+            else if (currentLv >= 5) prize = 8000;
+        }
+
+        saveToLeaderboard(playerName, prize, timeUsed);
+        document.getElementById('result-overlay').style.display = 'flex';
+        document.getElementById('result-title').innerText = type === "win" ? "🏆 WINNER! 🏆" : "GAME OVER";
+        document.getElementById('result-msg').innerHTML = `${playerName}<br>PRIZE: <b style="color:var(--atv-gold);">$${prize.toLocaleString()}</b><br>TIME: ${timeUsed}s`;
+    }
+
+    function saveToLeaderboard(name, money, time) {
+        try {
+            let lb = JSON.parse(localStorage.getItem('hist_mil_lb_final') || '[]');
+            lb.push({ name, money, time });
+            lb.sort((a, b) => b.money - a.money || a.time - b.time);
+            localStorage.setItem('hist_mil_lb_final', JSON.stringify(lb.slice(0, 10)));
+            displayLeaderboard();
+        } catch (e) {
+            console.warn("無法儲存龍虎榜。這通常是因為直接打開本地檔案 (file://) 且瀏覽器阻擋了 localStorage。建議將網頁放上伺服器運行。");
+        }
+    }
+
+    function displayLeaderboard() {
+        try {
+            let lb = JSON.parse(localStorage.getItem('hist_mil_lb_final') || '[]');
+            const tbody = document.querySelector('#lb-body tbody');
+            tbody.innerHTML = lb.length ? "" : "<tr><td colspan='4'>No Records</td></tr>";
+            lb.forEach((e, i) => {
+                tbody.innerHTML += `<tr><td>${i+1}</td><td>${e.name}</td><td>$${e.money.toLocaleString()}</td><td>${e.time}s</td></tr>`;
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    displayLeaderboard();
+</script>
+<script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>

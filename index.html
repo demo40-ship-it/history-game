@@ -414,7 +414,7 @@
     async function displayLeaderboard() {
         const tbody = document.querySelector('#lb-body tbody');
         
-        if (!SCRIPT_URL || SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbyh7as_8Ue-bAJfHjjizJc7a1zDip61gvZdKZO-k81nAQ40bELNKm2kz87-qzeq58l8cQ/exec")) {
+        if (!SCRIPT_URL || SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbx8IQEkZFGDYd0RaSngcnSlhjpoq6DEKbh_kPKqdvQ6Qw54g7zOWmFgRTUg-y5jlgAy7g/exec")) {
             tbody.innerHTML = "<tr><td colspan='4' style='color:#ffaa00;'>⚠️ 尚未連接雲端資料庫</td></tr>";
             return;
         }

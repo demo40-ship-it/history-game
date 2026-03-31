@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>歷史版百萬富翁 - 60題雙語龍虎榜版</title>
+    <title>歷史版百萬富翁</title>
     <style>
         :root { --atv-blue: #000044; --atv-gold: #ffd700; --atv-orange: #ff9900; }
         body { background-color: #000; color: white; font-family: "Microsoft JhengHei", "Arial", sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-size: 16px; overflow: hidden; }
@@ -82,8 +82,8 @@
 <div id="game-wrapper">
     <div id="setup-screen" class="screen active-screen">
         <div class="centered-content">
-            <h1>百萬富翁</h1>
-            <p style="font-size:1.1em; margin-top:0; color:var(--atv-gold);"> 歷史版百萬富翁 - 60題雙語龍虎榜版</p>
+            <h1>歷史版百萬富翁</h1>
+            <p style="font-size:1.1em; margin-top:0; color:var(--atv-gold);">挑戰你的歷史知識極限！</p>
             
             <div class="leaderboard-box">
                 <h3 style="color:var(--atv-gold); font-size:1.2em; margin-top:0; margin-bottom:10px;">🏆 雲端龍虎榜 (GLOBAL TOP 10)</h3>
@@ -140,11 +140,10 @@
 
 <script>
     // ==========================================
-    // ✅ 已更新為老師專屬的 Google Apps Script 網址
+    // ✅ 已更新為老師專屬的 Google Apps Script 網址 (歷史版)
     // ==========================================
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx8IQEkZFGDYd0RaSngcnSlhjpoq6DEKbh_kPKqdvQ6Qw54g7zOWmFgRTUg-y5jlgAy7g/exec';
 
-<script>
     // --- 完整 60 題雙語題庫 ---
     const ALL_QUESTIONS = [
         {qz:"1912年，辛亥革命後誰就任中華民國臨時大總統？", qe:"Who became the Provisional President of the ROC in 1912?", oz:["孫中山","袁世凱","宋教仁","黎元洪"], oe:["Sun Yat-sen","Yuan Shikai","Song Jiaoren","Li Yuanhong"], c:"孫中山"},
@@ -208,6 +207,7 @@
         {qz:"1989年誰在歐洲核子研究組織發明了萬維網(WWW)？", qe:"Who invented the World Wide Web (WWW) in 1989?", oz:["柏內茲-李","蓋茨","喬布斯","扎克伯格"], oe:["Tim Berners-Lee","Bill Gates","Steve Jobs","Zuckerberg"], c:"柏內茲-李"},
         {qz:"2000年人類進入了千禧年，那是哪個世紀的最後一年？", qe:"2000 was the final year of which century?", oz:["20世紀","21世紀","19世紀","18世紀"], oe:["20th Century","21st Century","19th Century","18th Century"], c:"20世紀"}
     ];
+
     const MONEY_VALUES = [1000000, 500000, 250000, 150000, 80000, 60000, 40000, 30000, 20000, 10000, 8000, 4000, 3000, 2000, 1000];
     const MONEY_TEXTS = ["1,000,000", "500,000", "250,000", "150,000", "80,000", "60,000", "40,000", "30,000", "20,000", "10,000", "8,000", "4,000", "3,000", "2,000", "1,000"];
     
@@ -244,6 +244,7 @@
 
         if (player && typeof player.playVideo === 'function') player.playVideo();
         
+        // 從60題中隨機抽取15題作為本次遊戲題庫
         let pool = [...ALL_QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 15);
         gameQuestions = pool.map(item => {
             let combined = item.oz.map((z, i) => ({ z, e: item.oe[i] }));
@@ -383,7 +384,7 @@
 
     // --- 連接 Google Sheets 資料庫的函數 ---
     async function saveToCloudLeaderboard(name, money, time) {
-        if (!SCRIPT_URL || SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbx8IQEkZFGDYd0RaSngcnSlhjpoq6DEKbh_kPKqdvQ6Qw54g7zOWmFgRTUg-y5jlgAy7g/exec")) {
+        if (!SCRIPT_URL || SCRIPT_URL.includes("請把你的_GOOGLE_APPS_SCRIPT_URL_貼在這裡")) {
             document.getElementById('upload-status').innerText = "⚠️ 老師尚未設定雲端資料庫網址，成績僅供參考。";
             return;
         }
@@ -405,7 +406,7 @@
     async function displayLeaderboard() {
         const tbody = document.querySelector('#lb-body tbody');
         
-        if (!SCRIPT_URL || SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbx8IQEkZFGDYd0RaSngcnSlhjpoq6DEKbh_kPKqdvQ6Qw54g7zOWmFgRTUg-y5jlgAy7g/exec")) {
+        if (!SCRIPT_URL || SCRIPT_URL.includes("請把你的_GOOGLE_APPS_SCRIPT_URL_貼在這裡")) {
             tbody.innerHTML = "<tr><td colspan='4' style='color:#ffaa00;'>⚠️ 尚未連接雲端資料庫</td></tr>";
             return;
         }

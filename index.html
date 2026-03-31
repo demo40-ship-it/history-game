@@ -372,7 +372,8 @@
         document.getElementById(id).classList.add('active-screen');
     }
 
-    function endGame(type) {
+    
+    async function endGame(type) {
         clearInterval(timerInterval);
         const timeUsed = Math.floor((Date.now() - startTime) / 1000);
         let prize = 0;
@@ -382,37 +383,57 @@
             else if (currentLv >= 5) prize = 8000;
         }
 
-        saveToLeaderboard(playerName, prize, timeUsed);
         document.getElementById('result-overlay').style.display = 'flex';
         document.getElementById('result-title').innerText = type === "win" ? "🏆 WINNER! 🏆" : "GAME OVER";
         document.getElementById('result-msg').innerHTML = `${playerName}<br>PRIZE: <b style="color:var(--atv-gold);">$${prize.toLocaleString()}</b><br>TIME: ${timeUsed}s`;
+        
+        await saveToCloudLeaderboard(playerName, prize, timeUsed);
     }
 
-    function saveToLeaderboard(name, money, time) {
+    // --- 連接 Google Sheets 資料庫的函數 ---
+    async function saveToCloudLeaderboard(name, money, time) {
+        if (!SCRIPT_URL || SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbx8IQEkZFGDYd0RaSngcnSlhjpoq6DEKbh_kPKqdvQ6Qw54g7zOWmFgRTUg-y5jlgAy7g/exec")) {
+            document.getElementById('upload-status').innerText = "⚠️ 老師尚未設定雲端資料庫網址，成績僅供參考。";
+            return;
+        }
+
+        document.getElementById('upload-status').innerText = "🔄 正在將成績上傳至雲端...";
         try {
-            let lb = JSON.parse(localStorage.getItem('hist_mil_lb_final') || '[]');
-            lb.push({ name, money, time });
-            lb.sort((a, b) => b.money - a.money || a.time - b.time);
-            localStorage.setItem('hist_mil_lb_final', JSON.stringify(lb.slice(0, 10)));
-            displayLeaderboard();
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 避免 CORS 阻擋
+                body: JSON.stringify({ name: name, money: money, time: time })
+            });
+            document.getElementById('upload-status').innerText = "✅ 成績已成功上傳至雲端！";
         } catch (e) {
-            console.warn("無法儲存龍虎榜。這通常是因為直接打開本地檔案 (file://) 且瀏覽器阻擋了 localStorage。建議將網頁放上伺服器運行。");
+            console.error("上傳失敗", e);
+            document.getElementById('upload-status').innerText = "❌ 成績上傳失敗，請檢查網路連線。";
         }
     }
 
-    function displayLeaderboard() {
+    async function displayLeaderboard() {
+        const tbody = document.querySelector('#lb-body tbody');
+        
+        if (!SCRIPT_URL || SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbyh7as_8Ue-bAJfHjjizJc7a1zDip61gvZdKZO-k81nAQ40bELNKm2kz87-qzeq58l8cQ/exec")) {
+            tbody.innerHTML = "<tr><td colspan='4' style='color:#ffaa00;'>⚠️ 尚未連接雲端資料庫</td></tr>";
+            return;
+        }
+
         try {
-            let lb = JSON.parse(localStorage.getItem('hist_mil_lb_final') || '[]');
-            const tbody = document.querySelector('#lb-body tbody');
-            tbody.innerHTML = lb.length ? "" : "<tr><td colspan='4'>No Records</td></tr>";
+            let res = await fetch(SCRIPT_URL);
+            let lb = await res.json();
+            
+            tbody.innerHTML = lb.length ? "" : "<tr><td colspan='4'>暫無紀錄 No Records</td></tr>";
             lb.forEach((e, i) => {
-                tbody.innerHTML += `<tr><td>${i+1}</td><td>${e.name}</td><td>$${e.money.toLocaleString()}</td><td>${e.time}s</td></tr>`;
+                tbody.innerHTML += `<tr><td>${i+1}</td><td>${e.name}</td><td>$${Number(e.money).toLocaleString()}</td><td>${e.time}s</td></tr>`;
             });
         } catch (e) {
+            tbody.innerHTML = "<tr><td colspan='4' style='color:red;'>❌ 無法載入雲端紀錄</td></tr>";
             console.error(e);
         }
     }
 
+    // 遊戲載入時，自動抓取最新的雲端排行榜
     displayLeaderboard();
 </script>
 <script src="https://www.youtube.com/iframe_api"></script>
